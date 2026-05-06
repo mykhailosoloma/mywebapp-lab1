@@ -1,0 +1,13 @@
+# /etc/mywebapp/config.yml
+# mywebapp configuration file
+
+app:
+  server:
+    host: 127.0.0.1
+    port: 8080
+  database:
+    host: 127.0.0.1
+    port: 5432
+    name: mywebapp
+    user: mywebapp
+    password: CHANGE_ME

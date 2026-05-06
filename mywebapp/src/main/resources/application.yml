@@ -1,0 +1,32 @@
+spring:
+  config:
+    import: "optional:file:/etc/mywebapp/config.yml"
+  jpa:
+    hibernate:
+      ddl-auto: none
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false
+  datasource:
+    url: jdbc:postgresql://${app.database.host:127.0.0.1}:${app.database.port:5432}/${app.database.name:mywebapp}
+    username: ${app.database.user:mywebapp}
+    password: ${app.database.password:mywebapp}
+    driver-class-name: org.postgresql.Driver
+
+app:
+  server:
+    host: 127.0.0.1
+    port: 8080
+  database:
+    host: 127.0.0.1
+    port: 5432
+    name: mywebapp
+    user: mywebapp
+    password: mywebapp
+
+server:
+  address: ${app.server.host:127.0.0.1}
+  port: ${app.server.port:8080}
+
+logging:
+  level:
+    com.mywebapp: INFO

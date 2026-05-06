@@ -1,0 +1,6 @@
+if command -v mvn &>/dev/null; then
+    mvn "$@"
+else
+    echo "Maven not found. Install with: sudo apt-get install -y maven"
+    exit 1
+fi

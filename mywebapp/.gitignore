@@ -1,0 +1,8 @@
+target/
+*.class
+*.jar
+!src/
+.idea/
+*.iml
+.DS_Store
+/etc/mywebapp/
