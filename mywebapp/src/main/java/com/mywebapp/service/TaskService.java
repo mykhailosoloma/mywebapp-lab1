@@ -2,7 +2,6 @@ package com.mywebapp.service;
 
 import com.mywebapp.model.Task;
 import com.mywebapp.repository.TaskRepository;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,7 +17,7 @@ public class TaskService {
     }
 
     public List<Task> getAllTasks() {
-        return taskRepository.findAll(Sort.by(Sort.Direction.ASC, "created_at"));
+        return taskRepository.findAll();
     }
 
     public Task createTask(String title) {

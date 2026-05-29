@@ -33,7 +33,7 @@ if ! id "$APP_USER" &>/dev/null; then
 fi
 
 if ! id operator &>/dev/null; then
-    useradd -m -s /bin/bash operator
+    useradd -m -s /bin/bash operator 2>/dev/null || useradd -m -s /bin/bash -g operator operator
     echo "operator:12345678" | chpasswd
     passwd -e operator
 fi
