@@ -2,11 +2,10 @@
 Description=mywebapp Task Tracker Web Application
 After=network.target postgresql.service
 
-
 [Service]
 Type=simple
-User=mywebapp
-Group=mywebapp
+User=app
+Group=app
 WorkingDirectory=/opt/mywebapp
 ExecStartPre=/opt/mywebapp/migrate.sh /etc/mywebapp/config.yml
 ExecStart=/usr/bin/java -jar /opt/mywebapp/mywebapp.jar
@@ -15,11 +14,8 @@ RestartSec=5
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=mywebapp
-Environment="JAVA_OPTS=-Xms128m -Xmx256m"
 NoNewPrivileges=true
 PrivateTmp=true
-ProtectSystem=full
-ReadWritePaths=/opt/mywebapp /tmp
 
 [Install]
 WantedBy=multi-user.target

@@ -2,6 +2,7 @@ package com.mywebapp.service;
 
 import com.mywebapp.model.Task;
 import com.mywebapp.repository.TaskRepository;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -17,13 +18,12 @@ public class TaskService {
     }
 
     public List<Task> getAllTasks() {
-        return taskRepository.findAll();
+        return taskRepository.findAll(Sort.by(Sort.Direction.ASC, "created_at"));
     }
 
     public Task createTask(String title) {
         Task task = new Task();
         task.setTitle(title);
-        task.setStatus("pending");
         return taskRepository.save(task);
     }
 
