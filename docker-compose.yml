@@ -1,0 +1,63 @@
+services:
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: mywebapp
+      POSTGRES_USER: mywebapp
+      POSTGRES_PASSWORD: mywebapp
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./deploy/migration.sql:/docker-entrypoint-initdb.d/01-migration.sql:ro
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mywebapp -d mywebapp"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/mywebapp
+      SPRING_DATASOURCE_USERNAME: mywebapp
+      SPRING_DATASOURCE_PASSWORD: mywebapp
+      SERVER_ADDRESS: 0.0.0.0
+      SERVER_PORT: 8080
+    networks:
+      - backend
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health/alive || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./deploy/nginx-mywebapp.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - backend
+    depends_on:
+      app:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+
+networks:
+  backend:
+    driver: bridge
