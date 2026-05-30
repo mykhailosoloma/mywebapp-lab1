@@ -13,7 +13,7 @@ jobs:
   # 1. STATIC ANALYSIS
   # ──────────────────────────────────────────────
   lint:
-    name: Static Analysis
+    name: lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -40,7 +40,7 @@ jobs:
   # 2. TESTS
   # ──────────────────────────────────────────────
   test:
-    name: Tests & Coverage
+    name: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
