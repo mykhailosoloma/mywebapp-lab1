@@ -1,6 +1,6 @@
 [Unit]
 Description=mywebapp Task Tracker (Docker container)
-After=network.target docker.service postgresql.service
+After=network.target docker.service
 Requires=docker.service
 
 [Service]
@@ -15,6 +15,7 @@ ExecStart=/bin/bash -c '\
     docker run --rm \
         --name mywebapp \
         --network mywebapp-net \
+        -p 127.0.0.1:8080:8080 \
         --env-file /opt/mywebapp/mywebapp.env \
         -e SERVER_ADDRESS=0.0.0.0 \
         -e SERVER_PORT=8080 \
