@@ -350,4 +350,4 @@ sudo reboot
 ssh student@<VM_IP>
 curl http://127.0.0.1/tasks
 # → повинно відповісти без ручного запуску
-```
+```## Lab 3 - CI/CD
