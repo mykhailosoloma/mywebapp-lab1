@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+    tags: ['v*']
+  pull_request:
+    branches: [master]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lint Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+          failure-threshold: warning
+
+      - name: Lint shell scripts
+        run: |
+          sudo apt-get install -y shellcheck -q
+          shellcheck deploy/deploy.sh deploy/migrate.sh
+
+      - name: Lint YAML
+        run: |
+          pip install yamllint -q
+          yamllint -d relaxed docker-compose.yml
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Create dummy config
+        run: |
+          sudo mkdir -p /etc/mywebapp
+          sudo touch /etc/mywebapp/config.yml
+          sudo chmod o+r /etc/mywebapp/config.yml
+
+      - name: Run tests
+        run: cd mywebapp && mvn test
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: jacoco-report
+          path: mywebapp/target/site/jacoco/
