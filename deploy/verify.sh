@@ -40,7 +40,7 @@ else
     fail "nginx is NOT active"
 fi
 
-if nginx -t 2>/dev/null; then
+if sudo nginx -t 2>/dev/null; then
     ok "nginx config is valid"
 else
     fail "nginx config is INVALID"
