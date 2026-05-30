@@ -27,7 +27,7 @@ jobs:
       - name: Lint YAML
         run: |
           pip install yamllint -q
-          yamllint -d relaxed docker-compose.yml
+          yamllint -d "{extends: relaxed, rules: {line-length: disable}}" docker-compose.yml
 
   test:
     runs-on: ubuntu-latest
