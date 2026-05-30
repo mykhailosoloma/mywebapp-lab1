@@ -1,6 +1,6 @@
 FROM eclipse-temurin:21-jdk-alpine AS builder
 
-RUN apk add --no-cache maven=3.9.9-r0
+RUN apk add --no-cache maven=3.9.11-r0
 
 WORKDIR /build
 
