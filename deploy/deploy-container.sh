@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-
+# deploy-container.sh
 set -euo pipefail
 
 APP_DIR="/opt/mywebapp"
@@ -16,16 +16,13 @@ echo "${IMAGE}" | sudo tee "${APP_DIR}/current-image"
 echo "==> Restarting service"
 sudo systemctl restart "${SERVICE_NAME}"
 
-echo "==> Waiting for service to become healthy (up to 60s)"
-for i in $(seq 1 12); do
-    if systemctl is-active --quiet "${SERVICE_NAME}"; then
-        sleep 5
-        if curl -sf http://127.0.0.1/health/alive >/dev/null 2>&1; then
-            echo "==> Service is up after $((i * 5))s"
-            exit 0
-        fi
+echo "==> Waiting for service to become healthy (up to 90s)"
+for i in $(seq 1 18); do
+    if docker exec mywebapp curl -sf http://localhost:8080/health/alive >/dev/null 2>&1; then
+        echo "==> Service is up after $((i * 5))s"
+        exit 0
     fi
-    echo "   Waiting... attempt ${i}/12"
+    echo "   Waiting... attempt ${i}/18"
     sleep 5
 done
 
