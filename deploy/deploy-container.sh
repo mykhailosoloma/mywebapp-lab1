@@ -11,13 +11,17 @@ docker pull "${IMAGE}"
 echo "==> Updating image reference"
 echo "${IMAGE}" | sudo tee "${APP_DIR}/current-image"
 
+echo "==> Updating verify script"
+curl -fsSL "https://raw.githubusercontent.com/mykhailosoloma/mywebapp-lab1/master/deploy/verify.sh" \
+    | sudo tee "${APP_DIR}/verify.sh" > /dev/null
+sudo chmod +x "${APP_DIR}/verify.sh"
+
 echo "==> Restarting service"
 sudo systemctl restart "${SERVICE_NAME}"
 
 echo "==> Waiting for container to start (up to 90s)"
 for i in $(seq 1 18); do
     if docker ps --format '{{.Names}}' | grep -q '^mywebapp$'; then
-        # Отримуємо IP контейнера в Docker мережі
         CONTAINER_IP=$(docker inspect mywebapp \
             --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' 2>/dev/null)
         if [ -n "${CONTAINER_IP}" ]; then
