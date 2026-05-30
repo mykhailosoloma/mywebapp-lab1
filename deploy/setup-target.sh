@@ -26,6 +26,7 @@ if ! command -v docker &>/dev/null; then
         "deb [arch=$(dpkg --print-architecture) \
         signed-by=/etc/apt/keyrings/docker.asc] \
         https://download.docker.com/linux/ubuntu \
+        # shellcheck source=/dev/null
         $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
         > /etc/apt/sources.list.d/docker.list
     apt-get update -y -q

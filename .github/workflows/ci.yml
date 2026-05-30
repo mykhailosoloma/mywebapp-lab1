@@ -27,7 +27,7 @@ jobs:
       - name: Lint shell scripts
         run: |
           sudo apt-get install -y shellcheck -q
-          shellcheck deploy/deploy.sh deploy/migrate.sh deploy/setup-target.sh deploy/verify.sh
+          shellcheck -x deploy/deploy.sh deploy/migrate.sh deploy/setup-target.sh deploy/verify.sh
 
       - name: Lint YAML files
         run: |
