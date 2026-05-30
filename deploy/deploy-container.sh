@@ -9,12 +9,12 @@ echo "${GITHUB_TOKEN}" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-st
 docker pull "${IMAGE}"
 
 echo "==> Updating image reference"
-echo "${IMAGE}" | sudo tee "${APP_DIR}/current-image"
+echo "${IMAGE}" > "${APP_DIR}/current-image"
 
 echo "==> Updating verify script"
 curl -fsSL "https://raw.githubusercontent.com/mykhailosoloma/mywebapp-lab1/master/deploy/verify.sh" \
-    | sudo tee "${APP_DIR}/verify.sh" > /dev/null
-sudo chmod +x "${APP_DIR}/verify.sh"
+    > "${APP_DIR}/verify.sh"
+chmod +x "${APP_DIR}/verify.sh"
 
 echo "==> Restarting service"
 sudo systemctl restart "${SERVICE_NAME}"
