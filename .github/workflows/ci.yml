@@ -3,12 +3,17 @@ name: CI
 on:
   push:
     branches: [master]
-    tags: ['v*']
+    tags:
+      - 'v*'
   pull_request:
     branches: [master]
 
 jobs:
+  # ──────────────────────────────────────────────
+  # 1. STATIC ANALYSIS
+  # ──────────────────────────────────────────────
   lint:
+    name: Static Analysis
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,14 +27,20 @@ jobs:
       - name: Lint shell scripts
         run: |
           sudo apt-get install -y shellcheck -q
-          shellcheck deploy/deploy.sh deploy/migrate.sh
+          shellcheck deploy/deploy.sh deploy/migrate.sh deploy/setup-target.sh deploy/verify.sh
 
-      - name: Lint YAML
+      - name: Lint YAML files
         run: |
           pip install yamllint -q
-          yamllint -d "{extends: relaxed, rules: {line-length: disable}}" docker-compose.yml
+          yamllint -d "{extends: relaxed, rules: {line-length: disable}}" \
+            docker-compose.yml \
+            .github/workflows/ci.yml
 
+  # ──────────────────────────────────────────────
+  # 2. TESTS
+  # ──────────────────────────────────────────────
   test:
+    name: Tests & Coverage
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -47,8 +58,8 @@ jobs:
           sudo touch /etc/mywebapp/config.yml
           sudo chmod o+r /etc/mywebapp/config.yml
 
-      - name: Run tests
-        run: cd mywebapp && mvn test
+      - name: Run tests with coverage check
+        run: cd mywebapp && mvn verify
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
@@ -56,3 +67,103 @@ jobs:
         with:
           name: jacoco-report
           path: mywebapp/target/site/jacoco/
+
+  # ──────────────────────────────────────────────
+  # 3. BUILD & PUSH IMAGE
+  # Runs only on push (not PRs), after lint+test pass
+  # ──────────────────────────────────────────────
+  build:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    if: github.event_name == 'push'
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
+            type=sha,prefix=sha-,format=long,enable=${{ github.ref == 'refs/heads/master' }}
+            type=raw,value=stable,enable=${{ startsWith(github.ref, 'refs/tags/') }}
+            type=ref,event=tag
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+
+  # ──────────────────────────────────────────────
+  # 4. DEPLOY — only on annotated tags
+  # ──────────────────────────────────────────────
+  deploy:
+    name: Deploy to Target Node
+    runs-on: self-hosted
+    needs: [build]
+    if: startsWith(github.ref, 'refs/tags/')
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set image tag
+        id: tag
+        run: echo "IMAGE=ghcr.io/${{ github.repository }}:${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy via SSH
+        env:
+          TARGET_HOST: ${{ secrets.TARGET_HOST }}
+          TARGET_USER: ${{ secrets.TARGET_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          IMAGE: ${{ steps.tag.outputs.IMAGE }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+        run: |
+          echo "$SSH_PRIVATE_KEY" > /tmp/deploy_key
+          chmod 600 /tmp/deploy_key
+
+          ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key \
+            "${TARGET_USER}@${TARGET_HOST}" \
+            "IMAGE='${IMAGE}' \
+             GITHUB_TOKEN='${GITHUB_TOKEN}' \
+             GITHUB_ACTOR='${GITHUB_ACTOR}' \
+             bash -s" < deploy/deploy-container.sh
+
+          rm -f /tmp/deploy_key
+
+      - name: Verify deployment
+        env:
+          TARGET_HOST: ${{ secrets.TARGET_HOST }}
+          TARGET_USER: ${{ secrets.TARGET_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          echo "$SSH_PRIVATE_KEY" > /tmp/deploy_key
+          chmod 600 /tmp/deploy_key
+
+          ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key \
+            "${TARGET_USER}@${TARGET_HOST}" \
+            "bash /opt/mywebapp/verify.sh" \
+          && echo "✅ Verification passed" \
+          || {
+            echo "❌ Verification FAILED"
+            rm -f /tmp/deploy_key
+            exit 1
+          }
+
+          rm -f /tmp/deploy_key

@@ -1,0 +1,30 @@
+[Unit]
+Description=mywebapp Task Tracker (Docker container)
+After=network.target docker.service postgresql.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User=root
+EnvironmentFile=/opt/mywebapp/mywebapp.env
+ExecStartPre=-/usr/bin/docker stop mywebapp
+ExecStartPre=-/usr/bin/docker rm mywebapp
+ExecStartPre=/bin/bash -c 'IMAGE=$(cat /opt/mywebapp/current-image); docker pull "$IMAGE"'
+ExecStart=/bin/bash -c '\
+    IMAGE=$(cat /opt/mywebapp/current-image); \
+    docker run --rm \
+        --name mywebapp \
+        --network mywebapp-net \
+        --env-file /opt/mywebapp/mywebapp.env \
+        -e SERVER_ADDRESS=0.0.0.0 \
+        -e SERVER_PORT=8080 \
+        "$IMAGE"'
+ExecStop=/usr/bin/docker stop mywebapp
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=mywebapp
+
+[Install]
+WantedBy=multi-user.target
